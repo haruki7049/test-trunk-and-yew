@@ -38,7 +38,10 @@
           overlays = [ inputs.rust-overlay.overlays.default ];
           rust = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
           craneLib = (inputs.crane.mkLib pkgs).overrideToolchain rust;
-          src = craneLib.cleanCargoSource ./.;
+
+          # craneLib.cleanCargoSource ignores `/index.html`
+          src = lib.cleanSource ./.;
+
           cargoArtifacts = craneLib.buildDepsOnly {
             inherit src;
           };
@@ -54,6 +57,9 @@
           cargo-doc = craneLib.cargoDoc {
             inherit src cargoArtifacts;
           };
+          trunk-project = craneLib.buildTrunkPackage {
+            inherit src cargoArtifacts;
+          };
         in
         {
           _module.args.pkgs = import inputs.nixpkgs {
@@ -61,8 +67,8 @@
           };
 
           packages = {
-            inherit rust-project;
-            default = rust-project;
+            inherit rust-project trunk-project;
+            default = trunk-project;
             doc = cargo-doc;
           };
 
